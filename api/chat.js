@@ -6,13 +6,12 @@ export default async function handler(req, res) {
   }
 
   if (!process.env.OPENAI_API_KEY) {
-    return res.status(500).json({ error: "Missing OPENAI_API_KEY" });
+    return res.status(500).json({
+      error: "OPENAI_API_KEY not found in environment"
+    });
   }
 
   try {
-    const body = req.body || {};
-    const messages = body.messages || [];
-
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
     });
@@ -20,22 +19,18 @@ export default async function handler(req, res) {
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        {
-          role: "system",
-          content: "你是一个专业、耐心、简洁的中文助手。"
-        },
-        ...messages
-      ],
-      temperature: 0.7
+        { role: "system", content: "You are a helpful assistant." },
+        ...(req.body?.messages || [])
+      ]
     });
 
     res.status(200).json({
       reply: completion.choices[0].message.content
     });
   } catch (err) {
-    console.error("Chat API error:", err);
+    console.error(err);
     res.status(500).json({
-      error: "Chat API failed",
+      error: "OpenAI request failed",
       detail: err.message
     });
   }
